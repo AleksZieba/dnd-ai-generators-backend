@@ -1,2 +1,3 @@
 crow_all.h
-.env
+.env 
+build/_deps
