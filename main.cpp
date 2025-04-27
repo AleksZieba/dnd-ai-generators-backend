@@ -2,76 +2,101 @@
 #include <cpr/cpr.h>
 #include <nlohmann/json.hpp>
 #include <cstdlib>
+#include <iostream>
+#include <sstream>
 
 using json = nlohmann::json;
 
 int main() {
     crow::SimpleApp app;
 
+    // Load configuration from environment
+    const char* api_key_env     = std::getenv("GOOGLE_API_KEY");
+    const char* project_env     = std::getenv("GOOGLE_PROJECT_ID");
+    const char* location_env    = std::getenv("GOOGLE_PROJECT_LOCATION");
+    if (!api_key_env || !project_env || !location_env) {
+        std::cerr << "Error: GOOGLE_API_KEY, GOOGLE_PROJECT_ID or "
+                     "GOOGLE_PROJECT_LOCATION not set\n";
+        return 1;
+    }
+    std::string api_key  = api_key_env;
+    std::string project  = project_env;
+    std::string location = location_env;
+
     CROW_ROUTE(app, "/api/gear").methods("POST"_method)
     ([&](const crow::request& req){
-        // Parse incoming JSON
-        auto j = json::parse(req.body);
-        std::string name = j.value("name", "");
-        std::string type = j.value("type", "");
-        std::string subtype = j.value("subtype", "");
-        std::string rarity = j.value("rarity", "");
-        std::string clothingPiece = j.value("clothingPiece", "");
-        std::string handedness = j.value("handedness", "");
+        // 1) Parse incoming JSON from frontend
+        auto in = json::parse(req.body);
+        std::string name            = in.value("name", "");
+        std::string type            = in.value("type", "");
+        std::string rarity          = in.value("rarity", "");
+        std::string weaponCategory  = in.value("weaponCategory", "");
+        std::string weaponType      = in.value("weaponType", "");
+        std::string armorClass      = in.value("subtype", "");
+        std::string clothingPiece   = in.value("clothingPiece", "");
 
-        // Build a prompt for Google Gemini
-        std::string prompt = "Generate a detailed description for a DnD " + type;
-        prompt += (type == "Weapon") ? (" (" + handedness + ", " + subtype + ")")
-                                      : (" (" + subtype + ")");
-        if (!clothingPiece.empty()) {
-            prompt += " piece: " + clothingPiece;
+        // 2) Build the text prompt
+        std::ostringstream prompt;
+        prompt << "You are a creative assistant for Dungeons & Dragons 5th Edition.\n"
+               << "Generate a vivid, lore-rich description of a magic item with these details:\n"
+               << "• Name: " << name << "\n"
+               << "• Type: " << type << "\n";
+        if (type == "Weapon") {
+            prompt << "• Category: " << weaponCategory << "\n"
+                   << "• Weapon Type: " << weaponType << "\n";
+        } else if (type == "Armor") {
+            prompt << "• Armor Class: " << armorClass << "\n";
+            if (armorClass != "Shield") {
+                prompt << "• Piece: " << clothingPiece << "\n";
+            }
         }
-        prompt += ", rarity: " + rarity + ".";
+        prompt << "• Rarity: " << rarity << "\n\n"
+               << "Include in your response:\n"
+               << "  – A short piece of in-world history or legend\n"
+               << "  – Its mechanical benefits\n"
+               << "  – A suggestion for one possible enchantment or curse\n";
 
-        // Retrieve API key from environment
-        const char* apiKey = std::getenv("GOOGLE_API_KEY");
-        if (!apiKey) {
-            crow::response res;
-            res.code = 500;
-            res.set_header("Content-Type", "application/json");
-            res.body = R"({"error":"Missing GOOGLE_API_KEY"})";
-            return res;
-        }
-
-        // Prepare Gemini request payload
-        json gemini_req = {
-            {"prompt", {{"text", prompt}}}
+        // 3) Prepare the Vertex AI request body
+        json payload = {
+            {"instances", {{{"content", prompt.str()}}}},
+            {"parameters", {
+                {"temperature",      0.0},   // no randomness / “no thinking”
+                {"maxOutputTokens", 256},
+                {"topP",           0.95}
+            }}
         };
 
-        // Call Google Gemini (Vertex AI) Text-Bison model
-        auto gemini_resp = cpr::Post(
-            cpr::Url{"https://generativelanguage.googleapis.com/v1beta2/models/text-bison-001:generateText?key=" + std::string(apiKey)},
+        // 4) Construct the Gemini 2.5 Flash predict URL
+        std::string url = 
+            "https://us-central1-aiplatform.googleapis.com/v1/projects/" + project +
+            "/locations/" + location +
+            "/publishers/google/models/gemini-2.5-flash:predict?key=" + api_key;
+
+        // 5) Send the HTTP POST
+        auto resp = cpr::Post(
+            cpr::Url{url},
             cpr::Header{{"Content-Type", "application/json"}},
-            cpr::Body{gemini_req.dump()}
+            cpr::Body{payload.dump()}
         );
 
-        if (gemini_resp.status_code != 200) {
-            crow::response res;
-            res.code = gemini_resp.status_code;
-            res.set_header("Content-Type", "application/json");
-            res.body = gemini_resp.text;
-            return res;
+        // 6) Handle errors at the HTTP layer
+        if (resp.error) {
+            json err = {
+                {"error",   "RequestFailed"},
+                {"message", resp.error.message}
+            };
+            crow::response c(500, err.dump());
+            c.set_header("Content-Type", "application/json");
+            return c;
         }
 
-        // Parse Gemini response
-        auto gemini_json = json::parse(gemini_resp.text);
-        std::string description = gemini_json["candidates"][0]["output"].get<std::string>();
-
-        // Return JSON to the frontend
-        json response = {
-            {"description", description}
-        };
-        crow::response res;
-        res.set_header("Content-Type", "application/json");
-        res.body = response.dump();
-        return res;
+        // 7) Parse and re-emit the full Vertex AI JSON response
+        //    (nlohmann::json::dump() produces valid RFC8259 JSON)
+        json fullResponse = json::parse(resp.text);
+        crow::response c(fullResponse.dump());
+        c.set_header("Content-Type", "application/json");
+        return c;
     });
 
     app.port(5000).multithreaded().run();
-    return 0;
 }
