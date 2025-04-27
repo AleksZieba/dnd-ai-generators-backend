@@ -1,3 +1,0 @@
-/mnt/c/Users/jfox1/workspace/github.com/AleksZieba/dnd-gear-generator-gemini-backend-cpp/build/_deps/curl-subbuild/CMakeFiles/curl-populate.dir
-/mnt/c/Users/jfox1/workspace/github.com/AleksZieba/dnd-gear-generator-gemini-backend-cpp/build/_deps/curl-subbuild/CMakeFiles/edit_cache.dir
-/mnt/c/Users/jfox1/workspace/github.com/AleksZieba/dnd-gear-generator-gemini-backend-cpp/build/_deps/curl-subbuild/CMakeFiles/rebuild_cache.dir
