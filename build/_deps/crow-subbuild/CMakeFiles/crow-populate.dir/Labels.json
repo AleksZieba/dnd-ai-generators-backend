@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/mnt/c/Users/jfox1/workspace/github.com/AleksZieba/dnd-gear-generator-gemini-backend-cpp/build/_deps/crow-subbuild/CMakeFiles/crow-populate"
+		},
+		{
+			"file" : "/mnt/c/Users/jfox1/workspace/github.com/AleksZieba/dnd-gear-generator-gemini-backend-cpp/build/_deps/crow-subbuild/CMakeFiles/crow-populate.rule"
+		},
+		{
+			"file" : "/mnt/c/Users/jfox1/workspace/github.com/AleksZieba/dnd-gear-generator-gemini-backend-cpp/build/_deps/crow-subbuild/CMakeFiles/crow-populate-complete.rule"
+		},
+		{
+			"file" : "/mnt/c/Users/jfox1/workspace/github.com/AleksZieba/dnd-gear-generator-gemini-backend-cpp/build/_deps/crow-subbuild/crow-populate-prefix/src/crow-populate-stamp/crow-populate-build.rule"
+		},
+		{
+			"file" : "/mnt/c/Users/jfox1/workspace/github.com/AleksZieba/dnd-gear-generator-gemini-backend-cpp/build/_deps/crow-subbuild/crow-populate-prefix/src/crow-populate-stamp/crow-populate-configure.rule"
+		},
+		{
+			"file" : "/mnt/c/Users/jfox1/workspace/github.com/AleksZieba/dnd-gear-generator-gemini-backend-cpp/build/_deps/crow-subbuild/crow-populate-prefix/src/crow-populate-stamp/crow-populate-download.rule"
+		},
+		{
+			"file" : "/mnt/c/Users/jfox1/workspace/github.com/AleksZieba/dnd-gear-generator-gemini-backend-cpp/build/_deps/crow-subbuild/crow-populate-prefix/src/crow-populate-stamp/crow-populate-install.rule"
+		},
+		{
+			"file" : "/mnt/c/Users/jfox1/workspace/github.com/AleksZieba/dnd-gear-generator-gemini-backend-cpp/build/_deps/crow-subbuild/crow-populate-prefix/src/crow-populate-stamp/crow-populate-mkdir.rule"
+		},
+		{
+			"file" : "/mnt/c/Users/jfox1/workspace/github.com/AleksZieba/dnd-gear-generator-gemini-backend-cpp/build/_deps/crow-subbuild/crow-populate-prefix/src/crow-populate-stamp/crow-populate-patch.rule"
+		},
+		{
+			"file" : "/mnt/c/Users/jfox1/workspace/github.com/AleksZieba/dnd-gear-generator-gemini-backend-cpp/build/_deps/crow-subbuild/crow-populate-prefix/src/crow-populate-stamp/crow-populate-test.rule"
+		},
+		{
+			"file" : "/mnt/c/Users/jfox1/workspace/github.com/AleksZieba/dnd-gear-generator-gemini-backend-cpp/build/_deps/crow-subbuild/crow-populate-prefix/src/crow-populate-stamp/crow-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"crow-populate"
+		],
+		"name" : "crow-populate"
+	}
+}

@@ -1,0 +1,3 @@
+/mnt/c/Users/jfox1/workspace/github.com/AleksZieba/dnd-gear-generator-gemini-backend-cpp/build/_deps/crow-subbuild/CMakeFiles/crow-populate.dir
+/mnt/c/Users/jfox1/workspace/github.com/AleksZieba/dnd-gear-generator-gemini-backend-cpp/build/_deps/crow-subbuild/CMakeFiles/edit_cache.dir
+/mnt/c/Users/jfox1/workspace/github.com/AleksZieba/dnd-gear-generator-gemini-backend-cpp/build/_deps/crow-subbuild/CMakeFiles/rebuild_cache.dir
