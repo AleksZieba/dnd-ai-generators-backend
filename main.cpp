@@ -25,15 +25,15 @@ int main() {
 
     CROW_ROUTE(app, "/api/gear").methods("POST"_method)
     ([&](const crow::request& req){
-        // 1) Parse incoming JSON from frontend
+        // 1) Parse incoming JSON
         auto in = json::parse(req.body);
-        std::string name            = in.value("name", "");
-        std::string type            = in.value("type", "");
-        std::string rarity          = in.value("rarity", "");
-        std::string weaponCategory  = in.value("weaponCategory", "");
-        std::string weaponType      = in.value("weaponType", "");
-        std::string armorClass      = in.value("subtype", "");
-        std::string clothingPiece   = in.value("clothingPiece", "");
+        std::string name           = in.value("name", "");
+        std::string type           = in.value("type", "");
+        std::string rarity         = in.value("rarity", "");
+        std::string weaponCategory = in.value("weaponCategory", "");
+        std::string weaponType     = in.value("weaponType", "");
+        std::string armorClass     = in.value("subtype", "");
+        std::string clothingPiece  = in.value("clothingPiece", "");
 
         // 2) Build the text prompt
         std::ostringstream prompt;
@@ -60,26 +60,28 @@ int main() {
         json payload = {
             {"instances", {{{"content", prompt.str()}}}},
             {"parameters", {
-                {"temperature",      0.0},   // no randomness / “no thinking”
+                {"temperature",      0.0},
                 {"maxOutputTokens", 256},
                 {"topP",           0.95}
             }}
         };
 
-        // 4) Construct the Gemini 2.5 Flash predict URL
-        std::string url = 
-            "https://us-central1-aiplatform.googleapis.com/v1/projects/" + project +
-            "/locations/" + location +
-            "/publishers/google/models/gemini-2.5-flash:predict?key=" + api_key;
+        // 4) Use Gemini 2.0 Flash model
+        std::string url =
+            "https://" + location + "-aiplatform.googleapis.com"
+            + "/v1/projects/" + project
+            + "/locations/" + location
+            + "/publishers/google/models/gemini-2.0-flash-001:predict"
+            + "?key=" + api_key;
 
-        // 5) Send the HTTP POST
+        // 5) Send POST to Vertex AI
         auto resp = cpr::Post(
             cpr::Url{url},
             cpr::Header{{"Content-Type", "application/json"}},
             cpr::Body{payload.dump()}
         );
 
-        // 6) Handle errors at the HTTP layer
+        // 6) Handle HTTP errors
         if (resp.error) {
             json err = {
                 {"error",   "RequestFailed"},
@@ -90,8 +92,7 @@ int main() {
             return c;
         }
 
-        // 7) Parse and re-emit the full Vertex AI JSON response
-        //    (nlohmann::json::dump() produces valid RFC8259 JSON)
+        // 7) Forward Gemini’s JSON verbatim (RFC 8259 compliant)
         json fullResponse = json::parse(resp.text);
         crow::response c(fullResponse.dump());
         c.set_header("Content-Type", "application/json");
