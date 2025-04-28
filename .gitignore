@@ -1,3 +1,9 @@
 crow_all.h
 .env 
-build/_deps
+build/_deps 
+build/CMakeFiles
+build/CMakeCache.txt 
+build/CPackConfig.txt 
+build/CPackSourceConfig.cmake 
+Makefile 
+cmake_install.cmake
