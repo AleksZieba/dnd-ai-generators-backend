@@ -132,7 +132,7 @@ json queryGemini(const json& in,
 )";
         prompt << "\nPopulate only the fields after those prefilled above.\n";
         if (allowEnchantment) {
-            prompt << "Description: include a short history, benefits, and an enchantment in 150 words or less (scale the enchantments appropriately according to rarity).\n";
+            prompt << "Description: include a short history, benefits, and an enchantment in 150 words or less, scale the enchantments appropriately according to rarity, only add curses to items of legendary rarity or greater.\n";
         } else {
             prompt << "Description: include a short history and benefits in 150 words or less (do NOT include any enchantment).\n";
         }
@@ -161,7 +161,7 @@ json queryGemini(const json& in,
 )";
         prompt << "\nPopulate fields after those prefilled above.\n";
         if (allowEnchantment) {
-            prompt << "Description: include a short history, benefits, and an enchantment or curse in 150 words or less.\n";
+            prompt << "Description: include a short history, benefits, and an enchantment in 150 words or less, scale the enchantments appropriately according to rarity, only add curses to items of legendary rarity or greater.\n";
         } else {
             prompt << "Description: include a short history and benefits in 150 words or less (do NOT include any enchantment or curse).\n";
         }
