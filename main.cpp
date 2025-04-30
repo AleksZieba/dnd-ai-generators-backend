@@ -13,6 +13,8 @@
 #include <chrono>
 #include <mutex>
 #include <iterator>
+#include <random>
+#include <vector>
 
 using json  = nlohmann::json;
 using Clock = std::chrono::system_clock;
@@ -197,9 +199,9 @@ static json queryGemini(const json& in,
 )";
         prompt << "\nPopulate only the fields after those prefilled above.\n";
         if (allowEnchantment) {
-            prompt << "Description: include a short history, benefits, and an enchantment in 150 words or less, scale the enchantments appropriately according to rarity, only add curses to items of legendary rarity or greater.\n";
+            prompt << "Description: include a short history, benefits, and an enchantment in 150 words or less, scale the enchantments appropriately according to rarity, only add curses to items of legendary rarity or greater, most importantly: be original and imaginative.\n";
         } else {
-            prompt << "Description: include a short history and benefits in 150 words or less (do NOT include any enchantment).\n";
+            prompt << "Description: include a short history and benefits in 150 words or less (do NOT include any enchantment). Most importantly: be original and imaginative.\n";
         }
 
     } else {
@@ -226,13 +228,13 @@ static json queryGemini(const json& in,
 )";
         prompt << "\nPopulate fields after those prefilled above.\n";
         if (allowEnchantment) {
-            prompt << "Description: include a short history, benefits, and an enchantment in 150 words or less, scale the enchantments appropriately according to rarity, only add curses to items of legendary rarity or greater.\n";
+            prompt << "Description: include a short history, benefits, and an enchantment in 150 words or less, scale the enchantments appropriately according to rarity, only add curses to items of legendary rarity or greater, most importantly: be original and imaginative.\n";
         } else {
-            prompt << "Description: include a short history and benefits in 150 words or less (do NOT include any enchantment or curse).\n";
+            prompt << "Description: include a short history and benefits in 150 words or less (do NOT include any enchantment or curse). Most importantly: be original and imaginative.\n";
         }
     }
 
-    // 2) Prepare payload
+    // 2) Prepare payload, now with topK=40
     json payload = {
       {"contents", json::array({
          {
@@ -241,16 +243,15 @@ static json queryGemini(const json& in,
          }
       })},
       {"generationConfig", {
-         {"temperature",     0.3},
-         {"maxOutputTokens",768},
-         {"topP",            0.95}
+         {"temperature",      1.0},
+         {"maxOutputTokens",  768},
+         {"topP",             0.95},
+         {"topK",             40}        // <— newly added topK parameter
       }}
     };
 
     // 3) Build URL
-    std::string host = std::string("https://")
-                     + location
-                     + "-aiplatform.googleapis.com";
+    std::string host  = "https://" + location + "-aiplatform.googleapis.com";
     std::string model = "gemini-2.0-flash-001";
     std::string url   = host
         + "/v1/projects/" + project
@@ -270,7 +271,7 @@ static json queryGemini(const json& in,
     if (resp.error) {
         throw std::runtime_error("HTTP POST failed: " + resp.error.message);
     }
-    if (resp.status_code<200 || resp.status_code>=300) {
+    if (resp.status_code < 200 || resp.status_code >= 300) {
         throw std::runtime_error(
           "Vertex AI HTTP " + std::to_string(resp.status_code)
           + ": " + resp.text
@@ -289,6 +290,7 @@ static json queryGemini(const json& in,
     return json::parse(jsonText);
 }
 
+// main()
 int main(int argc, char* argv[]) {
     loadDotenv(".env");
 
@@ -313,7 +315,7 @@ int main(int argc, char* argv[]) {
     std::string project  = proj;
     std::string location = loc;
 
-    // CLI
+    // CLI mode
     if (argc>1 && std::string(argv[1])=="--cli") {
         std::string inraw{
           std::istreambuf_iterator<char>(std::cin),
@@ -330,12 +332,65 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // HTTP server
+    // HTTP‐server mode
     crow::SimpleApp app;
-    CROW_ROUTE(app,"/api/gear").methods("POST"_method)
+
+    // Existing gear route
+    CROW_ROUTE(app, "/api/gear").methods("POST"_method)
     ([&](const crow::request& req){
         try {
             json in  = json::parse(req.body);
+            json out = queryGemini(in, adc, project, location);
+            crow::response res(out.dump());
+            res.set_header("Content-Type","application/json");
+            return res;
+        } catch(const std::exception& e) {
+            json err = {{"error","ProcessingFailed"},{"message",e.what()}};
+            crow::response res(500, err.dump());
+            res.set_header("Content-Type","application/json");
+            return res;
+        }
+    });
+
+    // Random‐gear route
+    CROW_ROUTE(app, "/api/gear/random").methods("GET"_method)
+    ([&](){
+        static std::mt19937_64 gen{ std::random_device{}() };
+
+        std::vector<std::string> rarities{"Common","Uncommon","Rare","Very Rare","Legendary","Artifact"};
+        std::uniform_int_distribution<> dR(0, (int)rarities.size()-1);
+
+        std::vector<std::string> types{"Weapon","Armor"};
+        std::uniform_int_distribution<> dT(0,1);
+
+        json in;
+        in["type"]   = types[dT(gen)];
+        in["rarity"] = rarities[dR(gen)];
+        in["name"]   = "";
+
+        if (in["type"] == "Weapon") {
+            std::vector<std::string> hands{"Single-Handed","Two-Handed"};
+            std::uniform_int_distribution<> dH(0,1);
+            std::string hand = hands[dH(gen)];
+            in["handedness"] = hand;
+            std::vector<std::string> subs = (hand=="Single-Handed")
+              ? std::vector<std::string>{"Dagger","Sword","Axe"}
+              : std::vector<std::string>{"Bow","Staff"};
+            std::uniform_int_distribution<> dS(0, (int)subs.size()-1);
+            in["subtype"] = subs[dS(gen)];
+        } else {
+            std::vector<std::string> armorClasses{"Light","Medium","Heavy","Shield","Clothes"};
+            std::uniform_int_distribution<> dA(0, (int)armorClasses.size()-1);
+            std::string ac = armorClasses[dA(gen)];
+            in["subtype"] = ac;
+            if (ac != "Shield") {
+                std::vector<std::string> cloths{"Helmet","Chestplate","Gauntlets","Boots","Cloak","Hat"};
+                std::uniform_int_distribution<> dC(0, (int)cloths.size()-1);
+                in["clothingPiece"] = cloths[dC(gen)];
+            }
+        }
+
+        try {
             json out = queryGemini(in, adc, project, location);
             crow::response res(out.dump());
             res.set_header("Content-Type","application/json");
