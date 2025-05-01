@@ -373,9 +373,37 @@ int main(int argc, char* argv[]) {
             std::uniform_int_distribution<> dH(0,1);
             std::string hand = hands[dH(gen)];
             in["handedness"] = hand;
-            std::vector<std::string> subs = (hand=="Single-Handed")
-              ? std::vector<std::string>{"Dagger","Sword","Axe"}
-              : std::vector<std::string>{"Bow","Staff"};
+            std::vector<std::string> subs = (hand == "Single-Handed")
+            ? std::vector<std::string>{
+                "Club",
+                "Dagger",
+                "Flail",
+                "Hand Crossbows",
+                "Handaxe",
+                "Javelin",
+                "Light Hammer",
+                "Mace",
+                "Morningstar",
+                "Rapier",
+                "Scimitar",
+                "Sickle",
+                "Shortsword",
+                "War pick"
+             }
+            : std::vector<std::string>{
+                "Battleaxe",
+                "Glaive",
+                "Greataxe",
+                "Greatsword",
+                "Halberd",
+                "Longsword",
+                "Maul",
+                "Pike",
+                "Quarterstave",
+                "Spears",
+                "Trident",
+                "Warhammer"
+            };
             std::uniform_int_distribution<> dS(0, (int)subs.size()-1);
             in["subtype"] = subs[dS(gen)];
         } else {
