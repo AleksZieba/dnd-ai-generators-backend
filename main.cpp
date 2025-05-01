@@ -170,7 +170,8 @@ static json queryGemini(const json& in,
                       handedness    = in.value("handedness",""),
                       subtype       = in.value("subtype",""),
                       rarity        = in.value("rarity",""),
-                      clothingPiece = in.value("clothingPiece","");
+                      clothingPiece = in.value("clothingPiece",""),
+                      extraDesc     = in.value("description", "");
 
     bool allowEnchantment = (rarity != "Common");
 
@@ -184,8 +185,11 @@ static json queryGemini(const json& in,
                << "  Name: "     << name << "\n"
                << "  Category: " << handedness << "\n"
                << "  Type: "     << subtype << "\n"
-               << "  Rarity: "   << rarity << "\n\n"
-               << "Your JSON schema should be:\n" << R"({
+               << "  Rarity: "   << rarity << "\n\n";
+               if (!extraDesc.empty()) {
+                   prompt << "\nAdditional Details: " << extraDesc << "\n";
+               }
+               prompt << "Your JSON schema should be:\n" << R"({
   "Name": "...",
   "Category": "...",
   "Type": "...",
@@ -213,6 +217,9 @@ static json queryGemini(const json& in,
         if (!clothingPiece.empty()) {
             prompt << "  ClothingPiece: " << clothingPiece << "\n";
         }
+        if (!extraDesc.empty()) {
+            prompt << "\nAdditional Details: " << extraDesc << "\n";
+        }
         prompt << "\nYour JSON schema should be:\n" << R"({
   "Name": "...",
   "ItemType": "...",
@@ -235,7 +242,7 @@ static json queryGemini(const json& in,
         }
     }
 
-    // 2) Prepare payload, now with topK=40
+    // 2) Prepare payload
     json payload = {
       {"contents", json::array({
          {
@@ -247,7 +254,7 @@ static json queryGemini(const json& in,
          {"temperature",      1.0},
          {"maxOutputTokens",  768},
          {"topP",             0.95},
-         {"topK",             40}        // <— newly added topK parameter
+         {"topK",             40}      
       }}
     };
 
