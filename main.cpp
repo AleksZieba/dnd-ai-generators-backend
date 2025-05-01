@@ -181,8 +181,11 @@ static json queryGemini(const json& in,
            << "Produce ONLY a single JSON object (no extra text).\n";
 
     if (kind == "Weapon") {
-        prompt << "I want a weapon with these parameters:\n"
-               << "  Name: "     << name << "\n"
+        prompt << "I want a weapon with these parameters:\n";
+        if (!name.empty()) {
+            prompt << " called \"" << name << "\"";
+        }
+        prompt << " with these parameters:\n"
                << "  Category: " << handedness << "\n"
                << "  Type: "     << subtype << "\n"
                << "  Rarity: "   << rarity << "\n\n";
@@ -210,8 +213,11 @@ static json queryGemini(const json& in,
         }
 
     } else {
-        prompt << "I want an armor/clothing item with these parameters:\n"
-               << "  Name: "       << name << "\n"
+        prompt << "I want an armor/clothing item with these parameters:\n";
+        if (!name.empty()) {
+            prompt << " called \"" << name << "\"";
+        }
+        prompt << " with these parameters:\n"
                << "  Armor Class: "<< subtype << "\n"
                << "  Rarity: "     << rarity << "\n";
         if (!clothingPiece.empty()) {
