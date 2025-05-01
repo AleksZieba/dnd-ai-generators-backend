@@ -199,9 +199,9 @@ static json queryGemini(const json& in,
 )";
         prompt << "\nPopulate only the fields after those prefilled above.\n";
         if (allowEnchantment) {
-            prompt << "Description: include a short history, benefits, and an enchantment in 150 words or less, scale the enchantments appropriately according to rarity, only add curses to items of legendary rarity or greater, most importantly: be original and imaginative.\n";
+            prompt << "Description: include a short history, benefits, and an enchantment in 150 words or less, scale the enchantments appropriately according to rarity, only add curses to items of legendary rarity or greater, most importantly: be original and imaginative. You are encouraged to use 1/2 lb. measurements on light items (e.g. 1/2 lb. or 1 1/2 lb.).\n";
         } else {
-            prompt << "Description: include a short history and benefits in 150 words or less (do NOT include any enchantment). Most importantly: be original and imaginative.\n";
+            prompt << "Description: include a short history and benefits in 150 words or less (do NOT include any enchantment). Most importantly: be original and imaginative. You are encouraged to use 1/2 lb. measurements on light items (e.g. 1/2 lb. or 1 1/2 lb.).\n";
         }
 
     } else {
@@ -228,9 +228,9 @@ static json queryGemini(const json& in,
 )";
         prompt << "\nPopulate fields after those prefilled above.\n";
         if (allowEnchantment) {
-            prompt << "Description: include a short history, benefits, and an enchantment in 150 words or less, scale the enchantments appropriately according to rarity, only add curses to items of legendary rarity or greater, most importantly: be original and imaginative.\n";
+            prompt << "Description: include a short history, benefits, and an enchantment in 150 words or less, scale the enchantments appropriately according to rarity, only add curses to items of legendary rarity or greater, most importantly: be original and imaginative. You are encouraged to use 1/2 lb. measurements on light items (e.g. 1/2 lb. or 1 1/2 lb.).\n";
         } else {
-            prompt << "Description: include a short history and benefits in 150 words or less (do NOT include any enchantment or curse). Most importantly: be original and imaginative.\n";
+            prompt << "Description: include a short history and benefits in 150 words or less (do NOT include any enchantment or curse). Most importantly: be original and imaginative. You are encouraged to use 1/2 lb. measurements on light items (e.g. 1/2 lb. or 1 1/2 lb.).\n";
         }
     }
 
@@ -290,6 +290,38 @@ static json queryGemini(const json& in,
     return json::parse(jsonText);
 }
 
+// Helper: if that numeric value > 1, switch to " lbs."
+static void adjustWeight(json &out) {
+    if (!out.contains("Weight") || !out["Weight"].is_string()) return;
+    std::string w = out["Weight"].get<std::string>();
+    const std::string suffix = " lb.";
+    if (w.size() <= suffix.size() || w.substr(w.size() - suffix.size()) != suffix)
+        return;
+    // split numeric part and unit
+    std::string numericPart = w.substr(0, w.size() - suffix.size());
+    std::istringstream iss(numericPart);
+    double value = 0.0;
+    // try float first
+    if (!(iss >> value)) {
+        // maybe mixed fraction "1 1/2"
+        iss.clear();
+        iss.str(numericPart);
+        int whole = 0;
+        std::string frac;
+        if (iss >> whole >> frac) {
+            auto slash = frac.find('/');
+            if (slash != std::string::npos) {
+                double num = std::stod(frac.substr(0, slash));
+                double den = std::stod(frac.substr(slash + 1));
+                value = whole + (num / den);
+            }
+        }
+    }
+    if (value > 1.0) {
+        out["Weight"] = numericPart + " lbs.";
+    }
+}
+
 // main()
 int main(int argc, char* argv[]) {
     loadDotenv(".env");
@@ -335,12 +367,13 @@ int main(int argc, char* argv[]) {
     // HTTP‐server mode
     crow::SimpleApp app;
 
-    // Existing gear route
+    // Gear builder route
     CROW_ROUTE(app, "/api/gear").methods("POST"_method)
     ([&](const crow::request& req){
         try {
             json in  = json::parse(req.body);
             json out = queryGemini(in, adc, project, location);
+            adjustWeight(out);
             crow::response res(out.dump());
             res.set_header("Content-Type","application/json");
             return res;
@@ -420,6 +453,7 @@ int main(int argc, char* argv[]) {
 
         try {
             json out = queryGemini(in, adc, project, location);
+            adjustWeight(out);
             crow::response res(out.dump());
             res.set_header("Content-Type","application/json");
             return res;
