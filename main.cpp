@@ -15,6 +15,7 @@
 #include <iterator>
 #include <random>
 #include <vector>
+#include <cmath>
 
 using json  = nlohmann::json;
 using Clock = std::chrono::system_clock;
@@ -291,35 +292,24 @@ static json queryGemini(const json& in,
 }
 
 // Helper: if that numeric value > 1, switch to " lbs."
-static void adjustWeight(json &out) {
+static void adjustWeight(nlohmann::json &out) {
     if (!out.contains("Weight") || !out["Weight"].is_string()) return;
-    std::string w = out["Weight"].get<std::string>();
-    const std::string suffix = " lb.";
-    if (w.size() <= suffix.size() || w.substr(w.size() - suffix.size()) != suffix)
-        return;
-    // split numeric part and unit
-    std::string numericPart = w.substr(0, w.size() - suffix.size());
-    std::istringstream iss(numericPart);
-    double value = 0.0;
-    // try float first
-    if (!(iss >> value)) {
-        // maybe mixed fraction "1 1/2"
-        iss.clear();
-        iss.str(numericPart);
-        int whole = 0;
-        std::string frac;
-        if (iss >> whole >> frac) {
-            auto slash = frac.find('/');
-            if (slash != std::string::npos) {
-                double num = std::stod(frac.substr(0, slash));
-                double den = std::stod(frac.substr(slash + 1));
-                value = whole + (num / den);
-            }
-        }
-    }
-    if (value > 1.0) {
-        out["Weight"] = numericPart + " lbs.";
-    }
+
+    // 1) grab & trim the original, e.g. "1 1/2 lb."
+    std::string w = trim(out["Weight"].get<std::string>());
+
+    // 2) split at the last space, to separate numeric and unit
+    auto pos = w.find_last_of(' ');
+    if (pos == std::string::npos) return;
+
+    std::string numericPart = trim(w.substr(0, pos));
+    // std::string oldUnit     = trim(w.substr(pos+1)); 
+
+    // 3) decide singular vs plural
+    std::string unit = (numericPart == "1") ? "lb." : "lbs.";
+
+    // 4) write it back
+    out["Weight"] = numericPart + " " + unit;
 }
 
 // main()
