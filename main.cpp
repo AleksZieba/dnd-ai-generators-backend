@@ -181,7 +181,7 @@ static json queryGemini(const json& in,
            << "Produce ONLY a single JSON object (no extra text).\n";
 
     if (kind == "Weapon") {
-        prompt << "I want a weapon with these parameters:\n";
+        prompt << "I want a weapon\n";
         if (!name.empty()) {
             prompt << " called \"" << name << "\"";
         }
@@ -193,18 +193,18 @@ static json queryGemini(const json& in,
                    prompt << "\nAdditional Details: " << extraDesc << "\n";
                }
                prompt << "Your JSON schema should be:\n" << R"({
-  "Name": "...",
-  "Category": "...",
-  "Type": "...",
-  "Rarity": "...",
-  "Cost": "...",
-  "DamageDice": "...",
-  "DamageType": "...",
-  "Weight": "...",
-  "Properties": ["...", "..."],
-  "Description": "..."
-}
-)";
+                  "Name": "...",
+                  "Category": "...",
+                  "Type": "...",
+                  "Rarity": "...",
+                  "Cost": "...",
+                  "DamageDice": "...",
+                  "DamageType": "...",
+                  "Weight": "...",
+                  "Properties": ["...", "..."],
+                  "Description": "..."
+                }
+                )";
         prompt << "\nPopulate only the fields after those prefilled above.\n";
         if (allowEnchantment) {
             prompt << "Description: include a short history, benefits, and an enchantment in 150 words or less, scale the enchantments appropriately according to rarity, only add curses to items of legendary rarity or greater, most importantly: be original and imaginative. You are encouraged to use 1/2 lb. measurements on light items (e.g. 1/2 lb. or 1 1/2 lb.).\n";
@@ -213,13 +213,32 @@ static json queryGemini(const json& in,
         }
 
     } else {
-        prompt << "I want an armor/clothing item with these parameters:\n";
+        prompt << "I want an armor/clothing item\n";
         if (!name.empty()) {
             prompt << " called \"" << name << "\"";
         }
         prompt << " with these parameters:\n"
-               << "  Armor Class: "<< subtype << "\n"
-               << "  Rarity: "     << rarity << "\n";
+               << "  Category: "             << subtype << "\n"
+               << "  Piece: "                << clothingPiece << "\n"
+               << "  Armor Class: "          << (subtype == "Clothes" ? "N/A" : subtype) << "\n"
+               << "  Attunement: "           << (subtype == "Clothes" ? "No"  : "Yes") << "\n"
+               << "  Stealth Disadvantage: " << ((subtype == "Heavy" || subtype == "Shield") ? "Yes" : "No")
+               << "\n\n";
+
+        prompt << "Your JSON schema should be:\n" << R"({
+          "Name": "...",
+          "Piece": "...",                  // headgear / clothes / etc.
+          "Category": "...",               // clothes/light/medium/heavy
+          "ArmorClass": "...",             // N/A or number
+          "Attunement": "...",             // Yes/No
+          "StealthDisadvantage": "...",    // Yes/No
+          "Weight": "...",                 // e.g. "1 lb." or "1 1/2 lbs."
+          "Cost": "...",                   // e.g. "15 gp"
+          "Properties": ["...", "..."],
+          "Description": "..."             // lore + benefits
+        }
+        )";
+
         if (!clothingPiece.empty()) {
             prompt << "  ClothingPiece: " << clothingPiece << "\n";
         }
@@ -227,19 +246,18 @@ static json queryGemini(const json& in,
             prompt << "\nAdditional Details: " << extraDesc << "\n";
         }
         prompt << "\nYour JSON schema should be:\n" << R"({
-  "Name": "...",
-  "ItemType": "...",
-  "Rarity": "...",
-  "Category": "...",
-  "Cost": "...",
-  "ArmorClass": "...",
-  "Attunement": "...",
-  "Weight": "...",
-  "Properties": ["...", "..."],
-  "Charges": "...",
-  "Description": "..."
-}
-)";
+          "Name": "...",
+          "ItemType": "...",
+          "Rarity": "...",
+          "Category": "...",
+          "Cost": "...",
+          "ArmorClass": "...",
+          "Attunement": "...",
+          "Weight": "...",
+          "Properties": ["...", "..."],
+          "Description": "..."
+        }
+        )";
         prompt << "\nPopulate fields after those prefilled above.\n";
         if (allowEnchantment) {
             prompt << "Description: include a short history, benefits, and an enchantment in 150 words or less, scale the enchantments appropriately according to rarity, only add curses to items of legendary rarity or greater, most importantly: be original and imaginative. You are encouraged to use 1/2 lb. measurements on light items (e.g. 1/2 lb. or 1 1/2 lb.).\n";
