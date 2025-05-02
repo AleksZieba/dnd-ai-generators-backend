@@ -629,7 +629,7 @@ int main(int argc, char* argv[]) {
         }
     });
 
-	CROW_ROUTE(app, "/api/shopkeeper/random").methods("POST"_method)
+	CROW_ROUTE(app, "/api/shopkeeper/random").methods("GET"_method)
     ([&](){
         static std::mt19937_64 gen{ std::random_device{}() };
         std::vector<std::string> races = {
