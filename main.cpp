@@ -203,13 +203,17 @@ static json queryGemini(const json& in,
 					"Weight": "...",
 					"Properties": ["...", "..."],
 					"Description": "..."
-				}
-				)";
+				})";
 		prompt << "\nPopulate only the fields after those prefilled above.\n";
 		if (allowEnchantment) {
-			prompt << "Description: include a short history, benefits, and an enchantment in 150 words or less, scale the enchantments appropriately according to rarity, only add curses to items of legendary rarity or greater, most importantly: be original and imaginative. Do not rely on the term \"dying star\". You are encouraged to use 1/2 lb. measurements on light items (e.g. 1/2 lb. or 1 1/2 lb.).\n";
+			prompt << "Description: include a short history, benefits, and an enchantment in 150 words or less, "\
+					  "scale the enchantments appropriately according to rarity, only add curses to items of legendary rarity or greater, "\
+					  "most importantly: be original and imaginative. Do not rely on the term \"dying star\". "\
+				      "You are encouraged to use 1/2 lb. measurements on light items (e.g. 1/2 lb. or 1 1/2 lb.).\n";
 		} else {
-			prompt << "Description: include a short history and benefits in 150 words or less (do NOT include any enchantment). Most importantly: be original and imaginative. Do not rely on the term \"dying star\". You are encouraged to use 1/2 lb. measurements on light items (e.g. 1/2 lb. or 1 1/2 lb.).\n";
+			prompt << "Description: include a short history and benefits in 150 words or less (do NOT include any enchantment). "\
+					  "Most importantly: be original and imaginative. Do not rely on the term \"dying star\". "\
+					  "You are encouraged to use 1/2 lb. measurements on light items (e.g. 1/2 lb. or 1 1/2 lb.).\n";
 		}
 
 	} else if (kind == "Armor") {
@@ -236,8 +240,7 @@ static json queryGemini(const json& in,
 			"Cost": "...",                   // e.g. "15 gp"
 			"Properties": ["...", "..."],
 			"Description": "..."             // lore + benefits
-		}
-		)";
+		})";
 
 		if (!clothingPiece.empty()) {
 			prompt << "  ClothingPiece: " << clothingPiece << "\n";
@@ -256,13 +259,17 @@ static json queryGemini(const json& in,
 			"Weight": "...",
 			"Properties": ["...", "..."],
 			"Description": "..."
-		}
-		)";
+		})";
 		prompt << "\nPopulate fields after those prefilled above.\n";
 		if (allowEnchantment) {
-			prompt << "Description: include a short history, benefits, and an enchantment in 150 words or less, scale the enchantments appropriately according to rarity, only add curses to items of legendary rarity or greater, most importantly: be original and imaginative. Do not rely on the term \"dying star\". You are encouraged to use 1/2 lb. measurements on light items (e.g. 1/2 lb. or 1 1/2 lb.).\n";
+			prompt << "Description: include a short history, benefits, and an enchantment in 150 words or less, "\
+					  "scale the enchantments appropriately according to rarity, only add curses to items of legendary rarity or greater, "\
+					  "most importantly: be original and imaginative. Do not rely on the term \"dying star\". "\
+					  "You are encouraged to use 1/2 lb. measurements on light items (e.g. 1/2 lb. or 1 1/2 lb.).\n";
 		} else {
-			prompt << "Description: include a short history and benefits in 150 words or less (do NOT include any enchantment or curse). Most importantly: be original and imaginative. Do not rely on the term \"dying star\". You are encouraged to use 1/2 lb. measurements on light items (e.g. 1/2 lb. or 1 1/2 lb.).\n";
+			prompt << "Description: include a short history and benefits in 150 words or less (do NOT include any enchantment or curse). "\
+					  "Most importantly: be original and imaginative. Do not rely on the term \"dying star\". "\
+					  "You are encouraged to use 1/2 lb. measurements on light items (e.g. 1/2 lb. or 1 1/2 lb.).\n";
 		}
 	} else { 
 		prompt << "You are a Dungeons & Dragons 5E jewelry crafter.\n"
@@ -285,9 +292,14 @@ static json queryGemini(const json& in,
 
 		prompt << "\nPopulate only the fields after those prefilled above.\n";
 		if (allowEnchantment) {
-			prompt << "Description: include a short history, benefits, and an enchantment in 150 words or less, scale the enchantments appropriately according to rarity, only add curses to items of legendary rarity or greater, most importantly: be original and imaginative, you are encouraged to combine fantasy sources, do not rely on terms like \"serpent\" or \"whispering sand\". Item weight should be a minimum of 1/2 lb.\n";
+			prompt << "Description: include a short history, benefits, and an enchantment in 150 words or less, "\
+					  "scale the enchantments appropriately according to rarity, only add curses to items of legendary rarity or greater, "\
+					  "most importantly: be original and imaginative, you are encouraged to combine fantasy sources, "\
+				      "do not rely on terms like \"serpent\" or \"whispering sand\". Item weight should be a minimum of 1/2 lb.\n";
 		} else {
-			prompt << "Description: include a short history and benefits in 150 words or less (do NOT include any enchantment or curse). Most importantly: be original and imaginative, you are encouraged to combine fantasy sources, do not rely on terms like \"serpent\" or \"whispering sand\". Item weight should be a minimum of 1/2 lb.\n";
+			prompt << "Description: include a short history and benefits in 150 words or less (do NOT include any enchantment or curse). "\
+					  "Most importantly: be original and imaginative, you are encouraged to combine fantasy sources, "\
+					  "do not rely on terms like \"serpent\" or \"whispering sand\". Item weight should be a minimum of 1/2 lb.\n";
 			}
 		}
 
@@ -366,6 +378,93 @@ static void adjustWeight(nlohmann::json &out) {
 
 	// 4) write it back
 	out["Weight"] = numericPart + " " + unit;
+}
+
+nlohmann::json queryShopkeeper(const nlohmann::json& in,
+                               const nlohmann::json& adc,
+                               const std::string& project,
+                               const std::string& location) {
+    using json = nlohmann::json;
+
+    // 1) extract inputs (description is optional)
+    std::string name          = in.value("name", "");
+    std::string race          = in.value("race", "");
+    std::string settlement    = in.value("settlementSize", "");
+    std::string shopType      = in.value("shopType", "");
+    std::string extraDesc     = in.value("description", "");
+
+    // 2) build the user prompt
+    std::ostringstream prompt;
+    prompt << "You are a Dungeons & Dragons 5th Edition shopkeeper NPC generator.\n"
+           << "Produce ONLY a single JSON object (no extra text) with this schema:\n"
+           << R"({
+  "Name": "...",
+  "Race": "...",
+  "SettlementSize": "...",
+  "ShopType": "...",
+  "Description": "...",
+  "ItemsList": ["...", "...", "..."]
+})"
+           << "\nHere are the parameters:\n"
+           << "• Name: "           << name       << "\n"
+           << "• Race: "           << race       << "\n"
+           << "• Settlement Size: "<< settlement << "\n"
+           << "• Shop Type: "      << shopType   << "\n";
+    if (!extraDesc.empty()) {
+        prompt << "• Additional Details: " << extraDesc << "\n";
+    }
+    prompt << "\nGenerate a list of 5–10 items this shopkeeper sells, appropriate to "
+              "the shop type and settlement size.\n";
+
+    // 3) prepare the Vertex AI payload
+    json payload = {
+        {"contents", json::array({
+            {
+                {"role",  "user"},
+                {"parts", json::array({ {{"text", prompt.str()}} }) }
+            }
+        })},
+        {"generationConfig", {
+            {"temperature",     0.3},
+            {"maxOutputTokens", 512},
+            {"topP",            0.95}
+        }}
+    };
+
+    // 4) call the *global* Gemini endpoint
+    std::string url = "https://aiplatform.googleapis.com"
+                    + std::string("/v1/projects/") + project
+                    + "/locations/"   + location
+                    + "/publishers/google/models/gemini-2.0-flash-001:generateContent";
+
+    std::string bearer = "Bearer " + getAccessToken(adc);
+    auto resp = cpr::Post(
+        cpr::Url{url},
+        cpr::Header{
+          {"Content-Type",  "application/json"},
+          {"Authorization", bearer}
+        },
+        cpr::Body{payload.dump()}
+    );
+    if (resp.error) {
+        throw std::runtime_error("Shopkeeper HTTP POST failed: " + resp.error.message);
+    }
+    if (resp.status_code < 200 || resp.status_code >= 300) {
+        throw std::runtime_error("Shopkeeper Vertex AI HTTP " +
+                                 std::to_string(resp.status_code) +
+                                 ": " + resp.text);
+    }
+
+    // 5) extract the JSON blob from the model’s response
+    auto full = json::parse(resp.text);
+    std::string raw =
+      full["candidates"][0]["content"]["parts"][0]["text"].get<std::string>();
+    auto start = raw.find('{'), end = raw.rfind('}');
+    if (start == std::string::npos || end == std::string::npos || end <= start) {
+      return full;
+    }
+    std::string jsonText = raw.substr(start, end - start + 1);
+    return json::parse(jsonText);
 }
 
 // main()
@@ -510,6 +609,25 @@ int main(int argc, char* argv[]) {
 			return res;
 		}
 	});
+
+	CROW_ROUTE(app, "/api/shopkeeper").methods("POST"_method)
+    ([&](const crow::request& req){
+        try {
+            auto in  = nlohmann::json::parse(req.body);
+            auto out = queryShopkeeper(in, adc, project, location);
+            crow::response res(out.dump());
+            res.set_header("Content-Type","application/json");
+            return res;
+        } catch (const std::exception& e) {
+            nlohmann::json err = {
+                {"error",   "ProcessingFailed"},
+                {"message", e.what()}
+            };
+            crow::response res(500, err.dump());
+            res.set_header("Content-Type","application/json");
+            return res;
+        }
+    });
 
 	app.port(5000).multithreaded().run();
 	return 0;
