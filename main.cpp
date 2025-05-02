@@ -398,22 +398,22 @@ nlohmann::json queryShopkeeper(const nlohmann::json& in,
     prompt << "You are a Dungeons & Dragons 5th Edition shopkeeper NPC generator.\n"
            << "Produce ONLY a single JSON object (no extra text) with this schema:\n"
            << R"({
-  "Name": "...",
-  "Race": "...",
-  "SettlementSize": "...",
-  "ShopType": "...",
-  "Description": "...",
-  "ItemsList": ["...", "...", "..."]
-})"
-           << "\nHere are the parameters:\n"
-           << "• Name: "           << name       << "\n"
-           << "• Race: "           << race       << "\n"
-           << "• Settlement Size: "<< settlement << "\n"
-           << "• Shop Type: "      << shopType   << "\n";
+				"Name": "...",
+				"Race": "...",
+				"SettlementSize": "...",
+				"ShopType": "...",
+				"Description": "...",
+				"ItemsList": ["...", "...", "..."]
+			})"
+          << "\nHere are the parameters:\n"
+          << "• Name: "           << name       << "\n"
+          << "• Race: "           << race       << "\n"
+          << "• Settlement Size: "<< settlement << "\n"
+          << "• Shop Type: "      << shopType   << "\n";
     if (!extraDesc.empty()) {
         prompt << "• Additional Details: " << extraDesc << "\n";
     }
-    prompt << "\nGenerate a list of 5–10 items this shopkeeper sells, appropriate to "
+    prompt << "\nGenerate a list of 10–15 items this shopkeeper sells, appropriate to "\
               "the shop type and settlement size.\n";
 
     // 3) prepare the Vertex AI payload
@@ -425,13 +425,13 @@ nlohmann::json queryShopkeeper(const nlohmann::json& in,
             }
         })},
         {"generationConfig", {
-            {"temperature",     0.3},
-            {"maxOutputTokens", 512},
+            {"temperature",     1.0},
+            {"maxOutputTokens", 768},
             {"topP",            0.95}
         }}
     };
 
-    // 4) call the *global* Gemini endpoint
+    // 4) call the Gemini endpoint
     std::string url = "https://aiplatform.googleapis.com"
                     + std::string("/v1/projects/") + project
                     + "/locations/"   + location
