@@ -426,12 +426,13 @@ nlohmann::json queryShopkeeper(const nlohmann::json& in,
         })},
         {"generationConfig", {
             {"temperature",     1.0},
-            {"maxOutputTokens", 768},
-            {"topP",            0.95}
+            {"maxOutputTokens", 1024},
+            {"topP",            0.95},
+			{"topK",             40}
         }}
     };
 
-    // 4) call the Gemini endpoint
+    // 4) call the Gemini endpoint (MAY CHANGE THIS TO GEMINI 2.5)
     std::string url = "https://aiplatform.googleapis.com"
                     + std::string("/v1/projects/") + project
                     + "/locations/"   + location
@@ -467,7 +468,6 @@ nlohmann::json queryShopkeeper(const nlohmann::json& in,
     return json::parse(jsonText);
 }
 
-// main()
 int main(int argc, char* argv[]) {
 	loadDotenv(".env");
 
@@ -623,6 +623,47 @@ int main(int argc, char* argv[]) {
                 {"error",   "ProcessingFailed"},
                 {"message", e.what()}
             };
+            crow::response res(500, err.dump());
+            res.set_header("Content-Type","application/json");
+            return res;
+        }
+    });
+
+	CROW_ROUTE(app, "/api/shopkeeper/random").methods("POST"_method)
+    ([&](){
+        static std::mt19937_64 gen{ std::random_device{}() };
+        std::vector<std::string> races = {
+            "Aarakocra","Aasimar","Air Genasi","Bugbear","Centaur","Changeling","Deep Gnome","Duergar","Dragonborn",
+            "Dwarf","Earth Genasi","Eladrin","Elf","Fairy","Firbolg","Fire Genasi","Githyanki","Githzerai","Gnome",
+            "Goliath","Half-Elf","Halfling","Half-Orc","Harengon","Hobgoblin","Human","Kenku","Kobold","Lizardfolk",
+            "Minotaur","Orc","Satyr","Sea Elf","Shadar-kai","Shifter","Tabaxi","Tiefling","Tortle","Triton",
+            "Water Genasi","Yuan-ti"
+        };
+        std::uniform_int_distribution<> dR(0, (int)races.size()-1);
+
+        std::vector<std::string> settlements{"Outpost","Village","Town","City"};
+        std::uniform_int_distribution<> dS(0, (int)settlements.size()-1);
+
+        std::vector<std::string> shopTypes{
+            "Alchemist","Apostle","Artificer","Apothecary","Blacksmith","Bookstore","Cobbler","Fletcher",
+            "General Store","Haberdashery","Innkeeper","Leatherworker","Pawnshop","Tailor"
+        };
+        std::uniform_int_distribution<> dT(0, (int)shopTypes.size()-1);
+
+        json in;
+        in["name"]           = "";
+        in["race"]           = races[dR(gen)];
+        in["settlementSize"] = settlements[dS(gen)];
+        in["shopType"]       = shopTypes[dT(gen)];
+        in["description"]    = "";
+
+        try {
+            json out = queryShopkeeper(in, adc, project, location);
+            crow::response res(out.dump());
+            res.set_header("Content-Type","application/json");
+            return res;
+        } catch (const std::exception& e) {
+            json err = {{"error","ProcessingFailed"},{"message",e.what()}};
             crow::response res(500, err.dump());
             res.set_header("Content-Type","application/json");
             return res;
