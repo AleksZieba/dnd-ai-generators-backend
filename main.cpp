@@ -30,8 +30,8 @@ static std::string trim(const std::string& s) {
 	auto b = s.find_first_not_of(" \t\r\n");
 	auto e = s.find_last_not_of (" \t\r\n");
 	return (b == std::string::npos)
-		 ? ""
-		 : s.substr(b, e-b+1);
+		? ""
+		: s.substr(b, e-b+1);
 }
 
 // Load .env into environment
@@ -46,7 +46,7 @@ static void loadDotenv(const std::string& filepath) {
 		std::string key   = trim(line.substr(0,eq));
 		std::string value = trim(line.substr(eq+1));
 		if (value.size()>=2 &&
-		   ((value.front()=='"' && value.back()=='"') ||
+			((value.front()=='"' && value.back()=='"') ||
 			(value.front()=='\''&& value.back()=='\'')))
 		{
 			value = value.substr(1, value.size()-2);
@@ -441,7 +441,7 @@ nlohmann::json queryShopkeeper(const nlohmann::json& in,
                     + "/publishers/google/models/gemini-2.0-flash-001:generateContent";
 
     std::string bearer = "Bearer " + getAccessToken(adc);
-    auto resp = cpr::Post(
+    auto resp = cpr::Get(
         cpr::Url{url},
         cpr::Header{
           {"Content-Type",  "application/json"},
@@ -450,7 +450,7 @@ nlohmann::json queryShopkeeper(const nlohmann::json& in,
         cpr::Body{payload.dump()}
     );
     if (resp.error) {
-        throw std::runtime_error("Shopkeeper HTTP POST failed: " + resp.error.message);
+        throw std::runtime_error("Shopkeeper HTTP GET failed: " + resp.error.message);
     }
     if (resp.status_code < 200 || resp.status_code >= 300) {
         throw std::runtime_error("Shopkeeper Vertex AI HTTP " +
@@ -574,22 +574,30 @@ int main(int argc, char* argv[]) {
 	crow::SimpleApp app;
 
 	// Gear builder route
-	CROW_ROUTE(app, "/api/gear").methods("POST"_method)
+	CROW_ROUTE(app, "/api/gear").methods("GET"_method)
 	([&](const crow::request& req){
 		try {
-			json in  = json::parse(req.body);
+			json in;
+			auto& params = req.url_params;
+			if (auto v = params.get("name"))           in["name"]           = v;
+			if (auto v = params.get("type"))           in["type"]           = v;
+			if (auto v = params.get("handedness"))     in["handedness"]     = v;
+			if (auto v = params.get("subtype"))        in["subtype"]        = v;
+			if (auto v = params.get("rarity"))         in["rarity"]         = v;
+			if (auto v = params.get("clothingPiece"))  in["clothingPiece"]  = v;
+			if (auto v = params.get("description"))    in["description"]    = v;
+
 			json out = queryGemini(in, adc, project, location);
-			adjustWeight(out);
-			crow::response res(out.dump());
-			res.set_header("Content-Type","application/json");
-			return res;
-		} catch(const std::exception& e) {
-			json err = {{"error","ProcessingFailed"},{"message",e.what()}};
-			crow::response res(500, err.dump());
-			res.set_header("Content-Type","application/json");
-			return res;
-		}
-	});
+            crow::response res(out.dump());
+            res.set_header("Content-Type","application/json");
+            return res;
+        } catch (const std::exception& e) {
+            json err = {{"error","ProcessingFailed"},{"message",e.what()}};
+            crow::response res(500, err.dump());
+            res.set_header("Content-Type","application/json");
+            return res;
+        }
+    });
 
 	// Random‐gear route
 	CROW_ROUTE(app, "/api/gear/random").methods("GET"_method)
@@ -671,10 +679,17 @@ int main(int argc, char* argv[]) {
 		}
 	});
 
-	CROW_ROUTE(app, "/api/shopkeeper").methods("POST"_method)
+	CROW_ROUTE(app, "/api/shopkeeper").methods("GET"_method)
     ([&](const crow::request& req){
-        try {
-            auto in  = nlohmann::json::parse(req.body);
+		try {
+			json in;
+            auto& params = req.url_params;
+            if (auto v = params.get("name"))           in["name"]           = v;
+            if (auto v = params.get("race"))           in["race"]           = v;
+            if (auto v = params.get("settlementSize")) in["settlementSize"] = v;
+            if (auto v = params.get("shopType"))       in["shopType"]       = v;
+            if (auto v = params.get("description"))    in["description"]    = v;
+
             auto out = queryShopkeeper(in, adc, project, location);
             crow::response res(out.dump());
             res.set_header("Content-Type","application/json");
