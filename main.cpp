@@ -403,18 +403,20 @@ nlohmann::json queryShopkeeper(const nlohmann::json& in,
 				"SettlementSize": "...",
 				"ShopType": "...",
 				"Description": "...",
-				"ItemsList": ["...", "...", "..."]
-			})"
-          << "\nHere are the parameters:\n"
-          << "• Name: "           << name       << "\n"
-          << "• Race: "           << race       << "\n"
-          << "• Settlement Size: "<< settlement << "\n"
-          << "• Shop Type: "      << shopType   << "\n";
+				"ItemsList": "[\"Item Name (10 gp)\",\"Another Item (2 sp)\",\"Another Item (5 cp)\",\"...\"]"
+		   })";
+		   prompt << "\nHere are the parameters:\n"
+				  << "• Name: "           << name       << "\n"
+				  << "• Race: "           << race       << "\n"
+				  << "• Settlement Size: "<< settlement << "\n"
+				  << "• Shop Type: "      << shopType   << "\n";
     if (!extraDesc.empty()) {
         prompt << "• Additional Details: " << extraDesc << "\n";
     }
     prompt << "\nGenerate a list of 10–15 items this shopkeeper sells, appropriate to "\
-              "the shop type and settlement size.\n";
+              "the shop type and settlement size. "\
+			  "For each item, include its price in gold pieces (gp), silver pieces (sp), or copper pieces (cp) in parentheses after the name, "\ 
+			  "e.g. \"Longsword (15 gp)\".\n";
 
     // 3) prepare the Vertex AI payload [USE THIS CODE TO TARGET GEMINI]
     /* json payload = {
@@ -527,7 +529,6 @@ nlohmann::json queryShopkeeper(const nlohmann::json& in,
 	
 int main(int argc, char* argv[]) {
 	loadDotenv(".env");
-	std::cerr << "⭑ OPENAI_API_KEY=" << (std::getenv("OPENAI_API_KEY")? "[set]" : "[missing]") << "\n";
 	const char* key = std::getenv("OPENAI_API_KEY");
     if (!key) throw std::runtime_error("OPENAI_API_KEY not set");
 
