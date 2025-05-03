@@ -416,8 +416,8 @@ nlohmann::json queryShopkeeper(const nlohmann::json& in,
     prompt << "\nGenerate a list of 10–15 items this shopkeeper sells, appropriate to "\
               "the shop type and settlement size.\n";
 
-    // 3) prepare the Vertex AI payload
-    json payload = {
+    // 3) prepare the Vertex AI payload [USE THIS CODE TO TARGET GEMINI]
+    /* json payload = {
         {"contents", json::array({
             {
                 {"role",  "user"},
@@ -459,17 +459,77 @@ nlohmann::json queryShopkeeper(const nlohmann::json& in,
     // 5) extract the JSON blob from the model’s response
     auto full = json::parse(resp.text);
     std::string raw =
-      full["candidates"][0]["content"]["parts"][0]["text"].get<std::string>();
+      full["candidates"][0]["content"]["parts"][0]["text"].get<std::string>(); */ 
+	
+	 // 3) ChatCompletion via OpenAI GPT-4.1-mini
+    const char* key = std::getenv("OPENAI_API_KEY");
+    if (!key) throw std::runtime_error("OPENAI_API_KEY not set");
+	json oa_payload = {
+		{"model",                  "gpt-4.1-mini"},
+		{"messages", json::array({
+			{
+			{"role",    "user"},
+			{"content", prompt.str()}
+			}
+		})},
+		{"response_format", json({{"type", "text"}})},
+		{"temperature",            1},
+		{"max_completion_tokens", 1024},
+		{"top_p",                  1},
+		{"frequency_penalty",      0},
+		{"presence_penalty",       0},
+		{"store",                  false}
+	};
+
+    auto resp = cpr::Post(
+		cpr::Url{"https://api.openai.com/v1/chat/completions"},
+		cpr::Header{
+			{"Content-Type",  "application/json"},
+			{"Authorization", std::string("Bearer ") + key},
+		},
+		cpr::Body{oa_payload.dump()}
+    );
+
+	// Debug logging 
+	/* std::cerr 
+		<< "[DEBUG] OpenAI responded " << resp.status_code 
+		<< "\n[DEBUG]   body: " << resp.text << "\n"; */
+
+	// 4) Check for errors
+    if (resp.error) {
+		throw std::runtime_error("OpenAI HTTP POST failed: " + resp.error.message);
+    }
+    if (resp.status_code != 200) {
+		throw std::runtime_error("OpenAI HTTP " +
+                               std::to_string(resp.status_code) +
+                               ": " + resp.text);
+    }
+
+    // 5) extract the JSON blob from ChatCompletion response
+    auto jresp = json::parse(resp.text);
+    std::string raw = jresp["choices"][0]["message"]["content"].get<std::string>();
     auto start = raw.find('{'), end = raw.rfind('}');
-    if (start == std::string::npos || end == std::string::npos || end <= start) {
+
+	//Code for Gemini 
+    /* if (start == std::string::npos || end == std::string::npos || end <= start) {
       return full;
+    }
+    std::string jsonText = raw.substr(start, end - start + 1);
+    return json::parse(jsonText); */
+
+	//Code for OpenAI 
+	if (start == std::string::npos || end == std::string::npos || end <= start) {
+      return {};  // or throw
     }
     std::string jsonText = raw.substr(start, end - start + 1);
     return json::parse(jsonText);
 }
-
+	
 int main(int argc, char* argv[]) {
 	loadDotenv(".env");
+	std::cerr << "⭑ OPENAI_API_KEY=" << (std::getenv("OPENAI_API_KEY")? "[set]" : "[missing]") << "\n";
+	const char* key = std::getenv("OPENAI_API_KEY");
+    if (!key) throw std::runtime_error("OPENAI_API_KEY not set");
 
 	const char* cred_env = std::getenv("GOOGLE_APPLICATION_CREDENTIALS");
 	if (!cred_env) {
