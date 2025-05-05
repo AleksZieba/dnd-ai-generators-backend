@@ -31,12 +31,12 @@ A C++ web server that powers the AI-driven gear and shopkeeper generators for [d
 
 ## Tech Stack
 
-- **C++17**  
-- **[Crow](https://github.com/CrowCpp/Crow)** (header-only web framework) :contentReference[oaicite:0]{index=0}:contentReference[oaicite:1]{index=1}  
-- **[cpr](https://github.com/libcpr/cpr)** for HTTP client :contentReference[oaicite:2]{index=2}:contentReference[oaicite:3]{index=3}  
-- **[nlohmann/json](https://github.com/nlohmann/json)** for JSON parsing :contentReference[oaicite:4]{index=4}:contentReference[oaicite:5]{index=5}  
-- **OpenSSL** for RSA-SHA256 signing and base64 URL encoding :contentReference[oaicite:6]{index=6}  
-- **CMake** & **FetchContent** for dependency management :contentReference[oaicite:8]{index=8}:contentReference[oaicite:9]{index=9}  
+- **C++17**
+- **[Crow](https://github.com/CrowCpp/Crow)** (header-only web framework)
+- **[cpr](https://github.com/libcpr/cpr)** for HTTP client
+- **[nlohmann/json](https://github.com/nlohmann/json)** for JSON parsing
+- **OpenSSL** for RSA-SHA256 signing and base64 URL encoding
+- **CMake** & **FetchContent** for dependency management
 
 ---
 
