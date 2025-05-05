@@ -1,6 +1,6 @@
 # DND AI Generators Backend
 
-A C++ web server that powers the AI-driven gear and shopkeeper generators for [dndgamegen.com](https://dndgamegen.com). It exposes both a CLI interface and a REST API to produce JSON-formatted output using Google Vertex AI (Gemini 2.0-Flash) and OpenAI GPT 4.1-mini but can be easily configured to use any Gemini or GPT model.
+A C++ web server that powers the AI-driven gear and shopkeeper generators for [dndgamegen.com](https://dndgamegen.com). It exposes both a CLI interface and a REST API to produce JSON-formatted output using Google Vertex AI (Gemini 2.0-Flash) and OpenAI GPT 4.1-mini, but can be easily configured to use any Gemini or GPT model.
 
 ---
 
@@ -126,4 +126,4 @@ All endpoints respond with application/json.
 
 ## License 
 
-This project is licensed under the GNU GPL v3 viewable here. 
+This project is licensed under the GNU GPL v3 viewable [here](https://github.com/AleksZieba/dnd-ai-generators-backend/blob/main/LICENSE.md). 
